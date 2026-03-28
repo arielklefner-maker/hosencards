@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>קלפי חוסן</title>
+    
+    <!-- טעינת Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- טעינת אייקונים (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* הגדרת אנימציית קפיצה */
+        @keyframes popIn {
+            0% { transform: scale(0.85) translateY(15px) rotate(2deg); opacity: 0; }
+            60% { transform: scale(1.05) translateY(-5px) rotate(-1deg); opacity: 1; }
+            100% { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        
+        /* גופנים בסיסיים */
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-sky-100 flex flex-col items-center justify-center p-6 text-purple-900 relative">
+
+    <!-- ================= מסך פתיחה ================= -->
+    <div id="start-screen" class="bg-white/90 backdrop-blur-sm rounded-[2.5rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-purple-100 p-8 max-w-lg w-full text-center animate-pop-in">
+        <div class="flex items-center justify-center gap-3 mb-6">
+            <i data-lucide="sparkles" class="text-purple-500 w-9 h-9"></i>
+            <h1 class="text-4xl font-extrabold text-purple-800 tracking-tight">קלפי חוסן</h1>
+        </div>
+        
+        <div class="bg-purple-50/50 rounded-2xl p-6 mb-8 text-right border border-purple-100">
+            <h2 class="text-xl font-bold text-purple-700 mb-3">הנחיות למורה ולתלמידים:</h2>
+            <ul class="list-disc list-inside text-purple-800/80 space-y-2 leading-relaxed">
+                <li>המשחק מכיל 40 קלפי חוסן שונים להתמודדות ושיח.</li>
+                <li>בכל תור נציג ילחץ על "הגרל קלף" כדי לשלוף קלף אקראי.</li>
+                <li>קראו את הקלף, שתפו מחשבות ודונו יחד בכיתה.</li>
+                <li>הקלפים לא חוזרים על עצמם במהלך המשחק.</li>
+                <li>ליצירת אווירה בטוחה, הקשיבו זה לזה בכבוד ובסבלנות.</li>
+            </ul>
+        </div>
+
+        <button onclick="startGame()" class="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-2xl font-bold text-xl text-white bg-gradient-to-r from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 shadow-lg hover:-translate-y-1 active:scale-95 transition-all duration-300">
+            <i data-lucide="play" class="fill-current w-6 h-6"></i>
+            התחל לשחק
+        </button>
+    </div>
+
+    <!-- ================= מסך המשחק ================= -->
+    <div id="play-screen" class="hidden bg-white/90 backdrop-blur-sm rounded-[2.5rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] border border-purple-100 p-8 max-w-sm w-full text-center animate-pop-in">
+        
+        <!-- כותרת -->
+        <div class="flex items-center justify-center gap-2 mb-8">
+            <i data-lucide="sparkles" class="text-purple-500 w-7 h-7"></i>
+            <h1 class="text-2xl font-extrabold text-purple-800 tracking-tight">קלפי חוסן</h1>
+        </div>
+
+        <!-- תצוגת הקלף -->
+        <div class="flex justify-center mb-8">
+            <div id="card-container" class="w-48 h-72 rounded-3xl overflow-hidden shadow-lg border-4 border-white animate-pop-in bg-purple-50 relative">
+                <!-- תוכן הקלף יוזרק לכאן ע"י JS -->
+            </div>
+        </div>
+
+        <!-- מונה קלפים ופס התקדמות -->
+        <div class="bg-purple-50/50 rounded-2xl p-5 mb-8 border border-purple-100">
+            <p class="text-sm text-purple-400 font-medium mb-1">קלפים שנותרו בקופה</p>
+            <div class="text-4xl font-black text-purple-600 flex items-baseline justify-center gap-1">
+                <span id="cards-left-text">40</span>
+                <span class="text-lg text-purple-300 font-normal">/ 40</span>
+            </div>
+            
+            <div class="w-full bg-purple-200/50 rounded-full h-2.5 mt-4 overflow-hidden">
+                <div id="progress-bar" class="bg-purple-400 h-2.5 rounded-full transition-all duration-700 ease-out" style="width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- כפתורי פעולה -->
+        <div class="flex flex-col gap-3">
+            <button id="draw-btn" onclick="drawCard()" class="flex items-center justify-center gap-2 py-4 px-6 rounded-2xl font-bold text-lg transition-all duration-300 bg-pink-200 text-pink-800 hover:bg-pink-300 hover:shadow-lg hover:-translate-y-1 active:scale-95">
+                <i data-lucide="shuffle" class="w-5 h-5"></i>
+                <span id="draw-btn-text">הגרל קלף</span>
+            </button>
+
+            <button onclick="showResetModal()" class="flex items-center justify-center gap-2 py-3 px-6 rounded-2xl font-semibold text-sky-700 bg-sky-100 hover:bg-sky-200 active:bg-sky-300 transition-all duration-200">
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                איפוס משחק
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= מודל (Modal) אישור איפוס ================= -->
+    <div id="reset-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-purple-900/40 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-[2rem] shadow-2xl p-8 max-w-sm w-full text-center animate-pop-in border border-purple-100">
+            <div class="mx-auto bg-rose-100 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                <i data-lucide="shield-alert" class="text-rose-500 w-8 h-8"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-purple-800 mb-2">איפוס משחק</h3>
+            <p class="text-purple-600 mb-8">האם אתה בטוח שברצונך להתחיל מחדש? כל ההתקדמות תימחק.</p>
+            
+            <div class="flex gap-3">
+                <button onclick="confirmReset()" class="flex-1 py-3 px-4 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold rounded-xl transition-colors flex justify-center items-center gap-2">
+                    <i data-lucide="check" class="w-5 h-5"></i>
+                    כן, אפס
+                </button>
+                <button onclick="hideResetModal()" class="flex-1 py-3 px-4 bg-stone-100 hover:bg-stone-200 text-stone-600 font-bold rounded-xl transition-colors flex justify-center items-center gap-2">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                    ביטול
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= Javascript ================= -->
+    <script>
+        // אתחול האייקונים של Lucide
+        lucide.createIcons();
+
+        // משתני מערכת
+        const TOTAL_CARDS = 40;
+        let deck = [];
+        let currentCard = null;
+
+        // אלמנטים מה-DOM
+        const startScreen = document.getElementById('start-screen');
+        const playScreen = document.getElementById('play-screen');
+        const resetModal = document.getElementById('reset-modal');
+        const cardContainer = document.getElementById('card-container');
+        const cardsLeftText = document.getElementById('cards-left-text');
+        const progressBar = document.getElementById('progress-bar');
+        const drawBtn = document.getElementById('draw-btn');
+        const drawBtnText = document.getElementById('draw-btn-text');
+
+        // פונקציה לייצור הקופה מחדש
+        function generateDeck() {
+            deck = Array.from({ length: TOTAL_CARDS }, (_, i) => i + 1);
+        }
+
+        // הפעלת מסך המשחק
+        function startGame() {
+            startScreen.classList.add('hidden');
+            playScreen.classList.remove('hidden');
+            generateDeck();
+            renderInitialCard();
+            updateUI();
+        }
+
+        // הגרלת קלף
+        function drawCard() {
+            if (deck.length === 0) return;
+
+            // הפעלת אנימציית קפיצה מחדש
+            cardContainer.classList.remove('animate-pop-in');
+            void cardContainer.offsetWidth; // טריק לאיפוס האנימציה ב-CSS
+            cardContainer.classList.add('animate-pop-in');
+
+            // בחירת קלף אקראי
+            const randomIndex = Math.floor(Math.random() * deck.length);
+            currentCard = deck[randomIndex];
+            
+            // הסרה מהקופה
+            deck.splice(randomIndex, 1);
+            
+            renderActiveCard();
+            updateUI();
+        }
+
+        // איפוס המשחק (לאחר אישור)
+        function confirmReset() {
+            generateDeck();
+            currentCard = null;
+            renderInitialCard();
+            updateUI();
+            hideResetModal();
+            
+            cardContainer.classList.remove('animate-pop-in');
+            void cardContainer.offsetWidth;
+            cardContainer.classList.add('animate-pop-in');
+        }
+
+        // ניהול המודל (Modal)
+        function showResetModal() {
+            resetModal.classList.remove('hidden');
+        }
+
+        function hideResetModal() {
+            resetModal.classList.add('hidden');
+        }
+
+        // עדכון מונה קלפים וכפתורים
+        function updateUI() {
+            cardsLeftText.innerText = deck.length;
+            progressBar.style.width = `${(deck.length / TOTAL_CARDS) * 100}%`;
+
+            if (deck.length === 0) {
+                drawBtn.classList.remove('bg-pink-200', 'text-pink-800', 'hover:bg-pink-300', 'hover:-translate-y-1', 'active:scale-95');
+                drawBtn.classList.add('bg-stone-100', 'text-stone-300', 'cursor-not-allowed');
+                drawBtnText.innerText = 'הקופה ריקה';
+                drawBtn.disabled = true;
+            } else {
+                drawBtn.classList.add('bg-pink-200', 'text-pink-800', 'hover:bg-pink-300', 'hover:-translate-y-1', 'active:scale-95');
+                drawBtn.classList.remove('bg-stone-100', 'text-stone-300', 'cursor-not-allowed');
+                drawBtnText.innerText = 'הגרל קלף';
+                drawBtn.disabled = false;
+            }
+        }
+
+        // רינדור גב הקלף (קלף 0)
+        function renderInitialCard() {
+            cardContainer.innerHTML = `
+                <img 
+                    src="card0.png" 
+                    alt="גב הקלף" 
+                    onerror="handleImageFallback(this, 0)" 
+                    class="w-full h-full object-cover"
+                />
+            `;
+        }
+
+        // רינדור קלף פעיל
+        function renderActiveCard() {
+            cardContainer.innerHTML = `
+                <img 
+                    src="card${currentCard}.png" 
+                    alt="קלף ${currentCard}" 
+                    onerror="handleImageFallback(this, ${currentCard})" 
+                    class="w-full h-full object-cover"
+                />
+            `;
+        }
+
+        // מנגנון גיבוי במקרה שתמונה לא נטענת (Fallback)
+        window.handleImageFallback = function(imgElement, cardNumber) {
+            if (cardNumber === 0) {
+                cardContainer.innerHTML = `
+                    <div class="w-full h-full bg-purple-100 flex flex-col items-center justify-center text-purple-400 p-4 border-4 border-dashed border-purple-200">
+                        <i data-lucide="sparkles" class="w-10 h-10 mb-2 opacity-50"></i>
+                        <span class="font-bold text-xl text-center">קלפי<br/>חוסן</span>
+                    </div>
+                `;
+            } else {
+                cardContainer.innerHTML = `
+                    <div class="w-full h-full bg-gradient-to-br from-purple-200 to-purple-300 flex items-center justify-center text-8xl font-black text-purple-800 shadow-inner border-4 border-white">
+                        ${cardNumber}
+                    </div>
+                `;
+            }
+            // קריאה מחודשת כדי שהאייקונים של Lucide יופיעו בתוך ה-HTML שהוזרק
+            lucide.createIcons();
+        };
+
+    </script>
+</body>
+</html>
